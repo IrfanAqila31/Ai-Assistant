@@ -1,23 +1,35 @@
 import { useState } from "react";
-const ChatInput = () => {
-  const [message, setMessage] = useState("");
+
+type ChatInputProps = {
+  onSendMessage: (message: string) => void;
+};
+
+const ChatInput = ({ onSendMessage }: ChatInputProps) => {
+  const [input, setInput] = useState("");
 
   const handleSend = () => {
-    console.log(message);
-    setMessage("");
+    if (!input.trim()) return;
+    onSendMessage(input);
+    setInput("");
+  };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSend();
+    }
   };
   return (
-    <div className="flex gap-4">
+    <div className="flex flex-wrap px-4 gap-4 max-w-3xl mx-auto">
       <input
         type="text"
         placeholder="Type your message ..."
-        className="flex-1 bg-zinc-800 text-white rounded-lg px-4 py-2 outline-none"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
+        className="flex-1 bg-zinc-800 text-white rounded-xl px-4 py-2 outline-none"
+        value={input}
+        onKeyDown={handleKeyDown}
+        onChange={(e) => setInput(e.target.value)}
       />
       <button
         onClick={handleSend}
-        className="bg-blue-600 hover:bg-blue-700 px-44 py-2 rounded-lg"
+        className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg"
       >
         Send
       </button>
