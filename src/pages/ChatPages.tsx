@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import ChatInput from "../components/ChatInput";
 import MessageBubble from "../components/MessageBubble";
+import { sendMessageToAI } from "../lib/openrouter";
 
 type Message = {
   role: "ai" | "user";
@@ -10,7 +11,7 @@ const ChatPages = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "ai",
-      content: "Hello! How can I help you",
+      content: "Haloo👋, Apakah ada yang bisa saya bantu?😁",
     },
   ]);
   const [isTyping, setIsTyping] = useState(false);
@@ -18,7 +19,7 @@ const ChatPages = () => {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
-  const handleSendMessage = (text: string) => {
+  const handleSendMessage = async (text: string) => {
     const newMessages: Message[] = [
       ...messages,
       { role: "user", content: text },
@@ -27,16 +28,28 @@ const ChatPages = () => {
     setMessages(newMessages);
     setIsTyping(true);
 
-    setTimeout(() => {
+    try {
+      const aiResponse = await sendMessageToAI(text);
+
       setMessages([
         ...newMessages,
         {
           role: "ai",
-          content: "This is a demo AI response 🤖",
+          content: aiResponse,
         },
       ]);
+    } catch (error) {
+      console.error("Gemini Error:", error);
+      setMessages([
+        ...newMessages,
+        {
+          role: "ai",
+          content: "Error mengambil respon AI 😢",
+        },
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 2000);
+    }
   };
   return (
     <>
@@ -56,13 +69,21 @@ const ChatPages = () => {
                 isUser={msg.role === "user"}
               />
             ))}
-            {isTyping && <MessageBubble message="AI is Typing..." />}
+            {isTyping && (
+              <div className="flex justify-start mb-4">
+                <div className="bg-zinc-800 px-2 py-2 rounded-xl flex gap-1">
+                  <span className="w-1 h-1 bg-white rounded-full animate-bounce"></span>
+                  <span className="w-1 h-1 bg-white rounded-full animate-bounce delay-150"></span>
+                  <span className="w-1 h-1 bg-white rounded-full animate-bounce delay-300"></span>
+                </div>
+              </div>
+            )}
             <div ref={chatEndRef}></div>
           </div>
         </main>
 
         {/* Input Area */}
-        <footer className="border-t border-zinc-800 p-4">
+        <footer className="border-t border-zinc-800 p-4 sticky bottom-0 bg-zinc-900">
           <ChatInput onSendMessage={handleSendMessage} />
         </footer>
       </div>
