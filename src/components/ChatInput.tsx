@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 type ChatInputProps = {
   onSendMessage: (message: string) => void;
@@ -6,22 +6,30 @@ type ChatInputProps = {
 
 const ChatInput = ({ onSendMessage }: ChatInputProps) => {
   const [input, setInput] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const handleSend = () => {
     if (!input.trim()) return;
     onSendMessage(input);
     setInput("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.scrollTop = 0;
+      textareaRef.current.focus();
+    }
   };
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); 
       handleSend();
     }
   };
   return (
     <div className="flex flex-wrap px-4 gap-4 max-w-3xl mx-auto">
       <textarea
+        ref={textareaRef}
         placeholder="Type your message ..."
-        className="flex-1 bg-zinc-800 text-white rounded-xl px-4 py-2 outline-none"
+        className="flex-1 bg-zinc-800 text-white rounded-xl px-4 py-2 outline-none custom-scrollbar"
         value={input}
         rows={1}
         onKeyDown={handleKeyDown}

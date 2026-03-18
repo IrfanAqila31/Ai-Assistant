@@ -8,17 +8,27 @@ type Message = {
   content: string;
 };
 const ChatPages = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "ai",
-      content: "Haloo👋, Apakah ada yang bisa saya bantu?😁",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    //ambil dari localstorage saat pertama kali load
+    const saved = localStorage.getItem("chat_messages");
+    return saved
+      ? JSON.parse(saved)
+      : [
+          {
+            role: "ai",
+            content: "Hello! How can I help you?",
+          },
+        ];
+  });
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
+//simpan di localstorage setiap update
+  useEffect(() => {
+    localStorage.setItem("chat_messages", JSON.stringify(messages));
+  }, [messages]);
   const handleSendMessage = async (text: string) => {
     const newMessages: Message[] = [
       ...messages,
