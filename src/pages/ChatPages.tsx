@@ -63,6 +63,21 @@ const ChatPages = () => {
     );
   };
 
+  // agar ai typing..
+  const typeMessage = async (
+    fullText: string,
+    callback: (text: string) => void,
+  ) => {
+    let current = "";
+
+    for (let i = 0; i < fullText.length; i++) {
+      current += fullText[i];
+      callback(current);
+
+      await new Promise((resolve) => setTimeout(resolve, 15)); // kecepatan ketik
+    }
+  };
+
   // mengirim pesan
   const handleSendMessage = async (text: string) => {
     const newMessages: Message[] = [
@@ -87,7 +102,13 @@ const ChatPages = () => {
     try {
       const aiResponse = await sendMessageToAI(text);
 
-      updateChatMessages([...newMessages, { role: "ai", content: aiResponse }]);
+      // 1. tampilkan bubble kosong dulu
+      updateChatMessages([...newMessages, { role: "ai", content: "" }]);
+
+      // 2. animasi mengetik
+      await typeMessage(aiResponse, (text) => {
+        updateChatMessages([...newMessages, { role: "ai", content: text }]);
+      });
     } catch {
       updateChatMessages([...newMessages, { role: "ai", content: "Error 😢" }]);
     } finally {
@@ -205,7 +226,7 @@ const ChatPages = () => {
         </div>
 
         {/* CHAT */}
-        <main className="flex-1 p-4 overflow-y-auto">
+        <main className="flex-1 p-4 overflow-y-auto custom-scrollbar">
           <div className="max-w-3xl mx-auto">
             {safeMessages.map((msg, index) => (
               <MessageBubble
