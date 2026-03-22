@@ -73,8 +73,8 @@ const ChatPages = () => {
     for (let i = 0; i < fullText.length; i++) {
       current += fullText[i];
       callback(current);
-
-      await new Promise((resolve) => setTimeout(resolve, 15)); // kecepatan ketik
+      // kecepatan ketik
+      await new Promise((resolve) => setTimeout(resolve, 8));
     }
   };
 
@@ -164,7 +164,7 @@ const ChatPages = () => {
       >
         {/* HEADER */}
         <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
-          <h1 className="text-lg font-semibold">Irfan AI</h1>
+          <h1 className="text-lg font-semibold">Lumina AI</h1>
           <button
             className="md:hidden cursor-pointer"
             onClick={() => setIsSidebarOpen(false)}
@@ -222,7 +222,7 @@ const ChatPages = () => {
             ☰
           </button>
 
-          <h1 className="text-lg font-semibold ml-3">Irfan AI</h1>
+          <h1 className="text-lg font-semibold ml-3">Lumina AI</h1>
         </div>
 
         {/* CHAT */}

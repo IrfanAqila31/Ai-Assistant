@@ -19,6 +19,7 @@ const MessageBubble = (Props: MessageBubbleProps) => {
         >
           <ReactMarkdown
             components={{
+
               pre: ({ children }) => (
                 <pre className="overflow-x-auto max-w-full bg-zinc-900 p-3 rounded-lg mt-2 mb-2">
                   {children}
