@@ -144,7 +144,10 @@ const ChatPages = () => {
         {/* HEADER */}
         <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
           <h1 className="text-lg font-semibold">Irfan AI</h1>
-          <button className="md:hidden cursor-pointer" onClick={() => setIsSidebarOpen(false)}>
+          <button
+            className="md:hidden cursor-pointer"
+            onClick={() => setIsSidebarOpen(false)}
+          >
             ✕
           </button>
         </div>
