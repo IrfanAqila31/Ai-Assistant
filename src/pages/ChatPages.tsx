@@ -127,7 +127,7 @@ const ChatPages = () => {
   };
 
   return (
-    <div className="flex h-screen bg-zinc-900 text-white">
+    <div className="flex h-[100dvh] bg-zinc-900 text-white">
       {/* OVERLAY */}
       {isSidebarOpen && (
         <div
