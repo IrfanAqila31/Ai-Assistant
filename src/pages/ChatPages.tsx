@@ -11,10 +11,11 @@ type Message = {
 type Chat = {
   id: string;
   title: string;
-  message: Message[];
+  messages: Message[];
 };
 
 const ChatPages = () => {
+  // 🔥 STATE
   const [chats, setChats] = useState<Chat[]>(() => {
     const saved = localStorage.getItem("chats");
     return saved
@@ -23,7 +24,7 @@ const ChatPages = () => {
           {
             id: "1",
             title: "New Chat",
-            message: [
+            messages: [
               {
                 role: "ai",
                 content: "Halo! Apakah ada yang bisa saya bantu? 😁",
@@ -35,141 +36,201 @@ const ChatPages = () => {
 
   const [activeChatId, setActiveChatId] = useState(chats[0].id);
   const [isTyping, setIsTyping] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Ambil chat aktif
-  const activeChat = chats.find((c) => c.id === activeChatId);
+  const activeChat = chats.find((chat) => chat.id === activeChatId) || chats[0];
 
-  // Scroll otomatis
+  const safeMessages = activeChat?.messages || [];
+
+  // auto scroll
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeChat?.message, isTyping]);
+  }, [safeMessages, isTyping]);
 
-  // Simpan di localstorage
+  // 🔥 SIMPAN LOCALSTORAGE
   useEffect(() => {
     localStorage.setItem("chats", JSON.stringify(chats));
   }, [chats]);
 
-  // Kirim pesan
-  const handleSendMessage = async (text: string) => {
-    if (!activeChat) return;
+  // menggupdate chatt
+  const updateChatMessages = (messages: Message[]) => {
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === activeChatId ? { ...chat, messages } : chat,
+      ),
+    );
+  };
 
+  // mengirim pesan
+  const handleSendMessage = async (text: string) => {
     const newMessages: Message[] = [
-      ...activeChat.message,
+      ...safeMessages,
       { role: "user", content: text },
     ];
 
-    // Update chat aktif
-    setChats((prev) =>
-      prev.map((chat) =>
-        chat.id === activeChatId ? { ...chat, message: newMessages } : chat,
-      ),
-    );
+    // auto diganti judul di sidebar
+    if (activeChat.title === "New Chat") {
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === activeChatId
+            ? { ...chat, title: text.slice(0, 25) }
+            : chat,
+        ),
+      );
+    }
 
+    updateChatMessages(newMessages);
     setIsTyping(true);
 
     try {
       const aiResponse = await sendMessageToAI(text);
 
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === activeChatId
-            ? {
-                ...chat,
-                message: [...newMessages, { role: "ai", content: aiResponse }],
-              }
-            : chat,
-        ),
-      );
-    } catch (error) {
-      console.error("Gemini Error:", error);
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === activeChatId
-            ? {
-                ...chat,
-                message: [
-                  ...newMessages,
-                  { role: "ai", content: "Error mengambil respon AI 😢" },
-                ],
-              }
-            : chat,
-        ),
-      );
+      updateChatMessages([...newMessages, { role: "ai", content: aiResponse }]);
+    } catch {
+      updateChatMessages([...newMessages, { role: "ai", content: "Error 😢" }]);
     } finally {
       setIsTyping(false);
     }
   };
 
-  // Tambah chat baru
+  // 🔥 chatt baru
   const handleNewChat = () => {
     const newChat: Chat = {
       id: Date.now().toString(),
       title: "New Chat",
-      message: [
-        { role: "ai", content: "Halo! Apakah ada yang bisa saya bantu? 😁" },
+      messages: [
+        {
+          role: "ai",
+          content: "Halo! Apakah ada yang bisa saya bantu? 😁",
+        },
       ],
     };
-    setChats((prev) => [...prev, newChat]);
+
+    setChats((prev) => [newChat, ...prev]);
     setActiveChatId(newChat.id);
+    setIsSidebarOpen(false);
+  };
+
+  // hapus chatt
+  const handleDeleteChat = (id: string) => {
+    setChats((prev) => {
+      const updated = prev.filter((chat) => chat.id !== id);
+
+      if (id === activeChatId) {
+        setActiveChatId(updated[0]?.id || "");
+      }
+
+      return updated;
+    });
   };
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-900 text-white">
-      {/* Header */}
-      <header className="border-b border-zinc-800 p-4 text-xl font-semibold flex justify-between items-center">
-        <span>Irfan AI</span>
-        <button
-          className="bg-zinc-800 px-3 py-1 rounded hover:bg-zinc-700"
-          onClick={handleNewChat}
-        >
-          + New Chat
-        </button>
-      </header>
+    <div className="flex h-screen bg-zinc-900 text-white">
+      {/* OVERLAY */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
-      {/* Tabs Chat */}
-      <div className="flex border-b border-zinc-800 overflow-x-auto">
-        {chats.map((chat) => (
-          <button
-            key={chat.id}
-            onClick={() => setActiveChatId(chat.id)}
-            className={`px-4 py-2 whitespace-nowrap ${
-              chat.id === activeChatId ? "bg-zinc-700" : "bg-zinc-800"
-            }`}
-          >
-            {chat.title}
+      {/* SIDEBAR */}
+      <aside
+        className={`fixed md:static top-0 left-0 h-full w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col z-50 transform transition-transform duration-300
+        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+      >
+        {/* HEADER */}
+        <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
+          <h1 className="text-lg font-semibold">Irfan AI</h1>
+          <button className="md:hidden cursor-pointer" onClick={() => setIsSidebarOpen(false)}>
+            ✕
           </button>
-        ))}
-      </div>
-
-      {/* Chat Area */}
-      <main className="flex-1 p-4 overflow-y-auto custom-scrollbar">
-        <div className="max-w-3xl mx-auto">
-          {activeChat?.message.map((msg, index) => (
-            <MessageBubble
-              key={index}
-              message={msg.content}
-              isUser={msg.role === "user"}
-            />
-          ))}
-
-          {isTyping && (
-            <div className="flex justify-start mb-4">
-              <div className="bg-zinc-800 px-2 py-2 rounded-xl flex gap-1">
-                <span className="w-1 h-1 bg-white rounded-full animate-bounce"></span>
-                <span className="w-1 h-1 bg-white rounded-full animate-bounce delay-150"></span>
-                <span className="w-1 h-1 bg-white rounded-full animate-bounce delay-300"></span>
-              </div>
-            </div>
-          )}
-          <div ref={chatEndRef}></div>
         </div>
-      </main>
 
-      {/* Input Area */}
-      <footer className="border-t border-zinc-800 p-4 sticky bottom-0 bg-zinc-900">
-        <ChatInput onSendMessage={handleSendMessage} />
-      </footer>
+        {/* NEW CHAT */}
+        <div className="p-2">
+          <button
+            onClick={handleNewChat}
+            className="w-full bg-indigo-600 py-2 rounded hover:bg-indigo-700"
+          >
+            + New Chat
+          </button>
+        </div>
+
+        {/* LIST CHAT */}
+        <div className="flex-1 overflow-y-auto">
+          {chats.map((chat) => (
+            <div
+              key={chat.id}
+              className={`flex justify-between items-center p-3 cursor-pointer text-sm border-b border-zinc-800
+              ${chat.id === activeChatId ? "bg-zinc-800" : "hover:bg-zinc-800"}`}
+            >
+              <span
+                onClick={() => {
+                  setActiveChatId(chat.id);
+                  setIsSidebarOpen(false);
+                }}
+              >
+                {chat.title}
+              </span>
+
+              <button
+                onClick={() => handleDeleteChat(chat.id)}
+                className="text-red-400 hover:text-red-600 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      {/* CHAT AREA */}
+      <div className="flex-1 flex flex-col">
+        {/* 🔥 HAMBURGER HEADER */}
+        <div className="p-4 border-b border-zinc-800 flex items-center">
+          <button
+            className="md:hidden text-xl mr-3 cursor-pointer"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            ☰
+          </button>
+
+          <h1 className="text-lg font-semibold ml-3">Irfan AI</h1>
+        </div>
+
+        {/* CHAT */}
+        <main className="flex-1 p-4 overflow-y-auto">
+          <div className="max-w-3xl mx-auto">
+            {safeMessages.map((msg, index) => (
+              <MessageBubble
+                key={index}
+                message={msg.content}
+                isUser={msg.role === "user"}
+              />
+            ))}
+
+            {isTyping && (
+              <div className="flex justify-start mb-4">
+                <div className="bg-zinc-800 px-3 py-2 rounded-xl flex gap-1">
+                  <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></span>
+                  <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce delay-150"></span>
+                  <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce delay-300"></span>
+                </div>
+              </div>
+            )}
+
+            <div ref={chatEndRef}></div>
+          </div>
+        </main>
+
+        {/* INPUT */}
+        <footer className="border-t border-zinc-800 p-4 bg-zinc-900">
+          <ChatInput onSendMessage={handleSendMessage} />
+        </footer>
+      </div>
     </div>
   );
 };
