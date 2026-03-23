@@ -159,12 +159,12 @@ const ChatPages = () => {
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed md:static top-0 left-0 h-full w-64 bg-zinc-950 border-r border-zinc-800 flex flex-col z-50 transform transition-transform duration-300
+        className={`fixed md:static top-0 left-0 h-full w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col z-50 transform transition-transform duration-300
         ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
         {/* HEADER */}
         <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
-          <h1 className="text-lg font-semibold">Lumina AI</h1>
+          <h1 className="text-lg font-semibold text-slate-300">Lumina AI</h1>
           <button
             className="md:hidden cursor-pointer"
             onClick={() => setIsSidebarOpen(false)}
@@ -188,7 +188,7 @@ const ChatPages = () => {
           {chats.map((chat) => (
             <div
               key={chat.id}
-              className={`flex justify-between items-center p-3 cursor-pointer text-sm border-b border-zinc-800
+              className={`flex justify-between items-center p-3 cursor-pointer text-sm border-b border-zinc-800 text-slate-200
               ${chat.id === activeChatId ? "bg-zinc-800" : "hover:bg-zinc-800"}`}
             >
               <span
@@ -202,7 +202,7 @@ const ChatPages = () => {
 
               <button
                 onClick={() => handleDeleteChat(chat.id)}
-                className="text-red-400 hover:text-red-600 text-xs"
+                className="text-zinc-500 hover:text-zinc-600 text-xs cursor-pointer"
               >
                 ✕
               </button>
@@ -222,7 +222,7 @@ const ChatPages = () => {
             ☰
           </button>
 
-          <h1 className="text-lg font-semibold ml-3">Lumina AI</h1>
+          <h1 className="text-lg font-semibold ml-3 text-slate-300">Lumina AI</h1>
         </div>
 
         {/* CHAT */}
