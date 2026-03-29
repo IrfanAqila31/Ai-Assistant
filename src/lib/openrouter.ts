@@ -18,5 +18,6 @@ export const sendMessageToAI = async (message: string) => {
 
   const data = await res.json();
 
-  return data.choices[0].message.content;
+  return data.choices?.[0]?.message?.content || "No response content from AI.";
 };
+

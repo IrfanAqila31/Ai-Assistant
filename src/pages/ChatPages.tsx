@@ -12,6 +12,7 @@ import ChatInput from "../components/ChatInput";
 import MessageBubble from "../components/MessageBubble";
 import { sendMessageToAI } from "../lib/openrouter";
 
+
 type Message = {
   role: "ai" | "user";
   content: string;
@@ -24,7 +25,7 @@ type Chat = {
 };
 
 const ChatPages = () => {
-  // 🔥 STATE
+  // STATE
   const [chats, setChats] = useState<Chat[]>(() => {
     const saved = localStorage.getItem("chats");
     return saved
