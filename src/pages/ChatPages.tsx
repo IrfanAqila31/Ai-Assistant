@@ -14,7 +14,6 @@ import { sendMessageToAI } from "../lib/openrouter";
 import { Link } from "react-router";
 import { Wand2 } from "lucide-react";
 
-
 type Message = {
   role: "ai" | "user";
   content: string;
@@ -47,7 +46,8 @@ const ChatPages = () => {
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  const activeChat = chats.find((chat) => chat.id === activeChatId) || chats[0] || null;
+  const activeChat =
+    chats.find((chat) => chat.id === activeChatId) || chats[0] || null;
   const safeMessages = activeChat?.messages || [];
   const isNewChat = safeMessages.length === 0;
 
@@ -67,18 +67,6 @@ const ChatPages = () => {
         chat.id === activeChatId ? { ...chat, messages } : chat,
       ),
     );
-  };
-
-  const typeMessage = async (
-    fullText: string,
-    callback: (text: string) => void,
-  ) => {
-    let current = "";
-    for (let i = 0; i < fullText.length; i++) {
-      current += fullText[i];
-      callback(current);
-      await new Promise((resolve) => setTimeout(resolve, 8));
-    }
   };
 
   const handleSendMessage = async (text: string) => {
@@ -101,10 +89,30 @@ const ChatPages = () => {
     setIsTyping(true);
 
     try {
-      const aiResponse = await sendMessageToAI(text);
-      updateChatMessages([...newMessages, { role: "ai", content: "" }]);
-      await typeMessage(aiResponse, (text) => {
-        updateChatMessages([...newMessages, { role: "ai", content: text }]);
+      let fullAIResponse = "";
+      // bubble kosong untuk AI sebelum streaming
+      const updatedWithEmptyAI = [
+        ...newMessages,
+        { role: "ai" as const, content: "" },
+      ];
+      updateChatMessages(updatedWithEmptyAI);
+
+      await sendMessageToAI(text, (chunk) => {
+        fullAIResponse += chunk;
+        // bubble AI real-time
+        setChats((prev) =>
+          prev.map((chat) =>
+            chat.id === activeChatId
+              ? {
+                  ...chat,
+                  messages: [
+                    ...newMessages,
+                    { role: "ai", content: fullAIResponse },
+                  ],
+                }
+              : chat,
+          ),
+        );
       });
     } catch {
       updateChatMessages([
@@ -133,11 +141,11 @@ const ChatPages = () => {
 
   const handleDeleteChat = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    
+
     setChats((prev) => {
       const updated = prev.filter((chat) => chat.id !== id);
-      
-      // JIKA KOSONG, BUAT BARU OTOMATIS (ANTI-KOSONG)
+
+      // JIKA KOSONG, BUAT BARU OTOMATIS
       if (updated.length === 0) {
         const newChat: Chat = {
           id: Date.now().toString(),
@@ -151,12 +159,13 @@ const ChatPages = () => {
       // PINDAH KE CHAT LAIN JIKA YANG DIHAPUS ADALAH ACTIVE CHAT
       if (id === activeChatId) {
         // Cari index chat yang baru saja dihapus
-        const deletedIndex = prev.findIndex(c => c.id === id);
-        // Pilih tetangga terdekat (sebelumnya atau sesudahnya)
-        const nextChat = updated[deletedIndex] || updated[deletedIndex - 1] || updated[0];
+        const deletedIndex = prev.findIndex((c) => c.id === id);
+        // Pilih tetangga terdekat sebelumnya atau sesudahnya
+        const nextChat =
+          updated[deletedIndex] || updated[deletedIndex - 1] || updated[0];
         setActiveChatId(nextChat.id);
       }
-      
+
       return updated;
     });
   };
@@ -215,7 +224,7 @@ const ChatPages = () => {
               Recent Conversations
             </p>
           </div>
-          
+
           {/* TOOLS LINK */}
           <Link
             to="/generator"
@@ -346,7 +355,7 @@ const ChatPages = () => {
 
                   {isTyping && (
                     <div className="flex justify-start items-end gap-3 fade-in">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/10 flex-shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/10 shrink-0">
                         <Sparkles size={16} className="text-indigo-400" />
                       </div>
                       <div className="ai-bubble px-4 py-3 rounded-2xl flex gap-1.5 items-center">
@@ -372,7 +381,6 @@ const ChatPages = () => {
             </p>
           </footer>
         )}
-
       </div>
     </div>
   );

@@ -1,14 +1,34 @@
 import { useState } from "react";
+import { Link } from "react-router";
+import { 
+  ArrowLeft, 
+  Sparkles, 
+  Wand2, 
+  Copy, 
+  Check, 
+  Loader2, 
+  FileText, 
+  Share2, 
+  Mail, 
+  Clapperboard, 
+  PenTool, 
+  Rocket 
+} from "lucide-react";
 import { sendMessageToAI } from "../lib/openrouter";
 import ReactMarkdown from "react-markdown";
-import { Copy, Check, Sparkles, Wand2, ArrowLeft } from "lucide-react";
-import { Link } from "react-router";
 
 const Generator = () => {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+
+  const suggestions = [
+    { label: "Blog Post", prompt: "Tuliskan draf artikel blog menarik tentang [Topik Anda]", icon: FileText },
+    { label: "Social Media", prompt: "Buatlah caption Instagram yang menarik untuk konten [Konteks Konten]", icon: Share2 },
+    { label: "Email Bisnis", prompt: "Tuliskan email penawaran profesional untuk klien mengenai [Produk/Jasa]", icon: Mail },
+    { label: "Script Video", prompt: "Buatlah naskah video pendek (60 detik) untuk promosi [Produk/Brand]", icon: Clapperboard },
+  ];
 
   const handleCopy = () => {
     if (!output) return;
@@ -73,47 +93,74 @@ const Generator = () => {
           {/* HERO SECTION */}
           <div className="text-center mb-12 fade-in">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-6">
-              <Wand2 size={12} />
-              AI Magic at your fingertips
+              <Rocket size={12} />
+              <span>Premium AI Content Engine</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 heading-font tracking-tight">
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 heading-font tracking-tight text-white">
               Create <span className="gradient-text">Stunning</span> Content
             </h2>
-            <p className="text-zinc-400 text-sm md:text-base max-w-lg mx-auto">
-              Transform your ideas into professional articles, blog posts, or
-              social media content in seconds.
+            <p className="text-zinc-500 text-sm md:text-base max-w-lg mx-auto mb-10 leading-relaxed">
+              Transform your ideas into professional articles, social media posts, 
+              business emails, or viral scripts in seconds.
             </p>
+
+            {/* CATEGORY GRID */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mb-12">
+              {[
+                { icon: FileText, label: "Articles" },
+                { icon: Share2, label: "Social" },
+                { icon: Mail, label: "Business" },
+                { icon: PenTool, label: "Creative" },
+              ].map((item, idx) => (
+                <div key={idx} className="glass p-4 rounded-2xl border border-white/5 flex flex-col items-center gap-2 group hover:border-indigo-500/30 transition-all">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-indigo-400 group-hover:bg-indigo-500/10 transition-all">
+                    <item.icon size={20} />
+                  </div>
+                  <span className="text-xs font-medium text-zinc-500 group-hover:text-zinc-300">{item.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* INPUT AREA */}
-          <div className="w-full glass rounded-3xl p-2 mb-8 fade-in [animation-delay:0.1s] shadow-2xl shadow-indigo-500/5">
-            <div className="relative">
-              <textarea
-                className="w-full bg-transparent p-6 min-h-[160px] text-zinc-200 placeholder:text-zinc-600 focus:outline-hidden resize-none text-base md:text-lg"
-                placeholder="What would you like to generate today? (e.g. A blog post about future of AI)"
+          <div className="w-full max-w-2xl glass p-3 md:p-4 rounded-3xl border border-white/10 shadow-2xl scale-in mb-6">
+            <div className="relative flex items-center">
+              <div className="absolute left-4 text-zinc-500">
+                <Wand2 size={20} />
+              </div>
+              <input
+                type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                placeholder="Apa yang ingin Anda tulis hari ini?"
+                className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-32 outline-none text-white focus:border-indigo-500/30 focus:bg-white/[0.08] transition-all"
               />
-              <div className="absolute bottom-4 right-4 flex items-center gap-3">
-                <button
-                  onClick={handleGenerate}
-                  disabled={isLoading}
-                  className="flex items-center gap-2 bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-6 py-2.5 rounded-2xl font-semibold text-sm transition-all duration-300 shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={16} />
-                      Generate Content
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                onClick={handleGenerate}
+                disabled={isLoading}
+                className="absolute right-2 px-6 py-2.5 bg-linear-to-br from-indigo-500 to-purple-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all min-w-[120px] flex items-center justify-center"
+              >
+                {isLoading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  "Generate"
+                )}
+              </button>
             </div>
+          </div>
+
+          {/* SUGGESTION CHIPS */}
+          <div className="flex flex-wrap justify-center gap-3 mb-12 fade-in">
+            {suggestions.map((s, idx) => (
+              <button
+                key={idx}
+                onClick={() => setInput(s.prompt)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5 text-xs text-zinc-500 hover:text-white hover:bg-indigo-500/10 hover:border-indigo-500/30 transition-all cursor-pointer"
+              >
+                <s.icon size={12} />
+                <span>{s.label}</span>
+              </button>
+            ))}
           </div>
 
           {/* OUTPUT AREA */}
