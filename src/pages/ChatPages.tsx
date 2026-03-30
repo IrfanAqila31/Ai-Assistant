@@ -11,6 +11,8 @@ import {
 import ChatInput from "../components/ChatInput";
 import MessageBubble from "../components/MessageBubble";
 import { sendMessageToAI } from "../lib/openrouter";
+import { Link } from "react-router";
+import { Wand2 } from "lucide-react";
 
 
 type Message = {
@@ -34,13 +36,7 @@ const ChatPages = () => {
           {
             id: "1",
             title: "New Chat",
-            messages: [
-              {
-                role: "ai",
-                content:
-                  "Halo! Saya Lumina AI. Ada yang bisa saya bantu hari ini? ✨",
-              },
-            ],
+            messages: [],
           },
         ];
   });
@@ -51,8 +47,9 @@ const ChatPages = () => {
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  const activeChat = chats.find((chat) => chat.id === activeChatId) || chats[0];
+  const activeChat = chats.find((chat) => chat.id === activeChatId) || chats[0] || null;
   const safeMessages = activeChat?.messages || [];
+  const isNewChat = safeMessages.length === 0;
 
   // auto scroll
   useEffect(() => {
@@ -90,7 +87,7 @@ const ChatPages = () => {
       { role: "user", content: text },
     ];
 
-    if (activeChat.title === "New Chat") {
+    if (activeChat?.title === "New Chat") {
       setChats((prev) =>
         prev.map((chat) =>
           chat.id === activeChatId
@@ -126,12 +123,7 @@ const ChatPages = () => {
     const newChat: Chat = {
       id: Date.now().toString(),
       title: "New Chat",
-      messages: [
-        {
-          role: "ai",
-          content: "Halo! Ada yang bisa saya bantu? 😁",
-        },
-      ],
+      messages: [],
     };
 
     setChats((prev) => [newChat, ...prev]);
@@ -141,11 +133,30 @@ const ChatPages = () => {
 
   const handleDeleteChat = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    
     setChats((prev) => {
       const updated = prev.filter((chat) => chat.id !== id);
-      if (id === activeChatId) {
-        setActiveChatId(updated[0]?.id || "");
+      
+      // JIKA KOSONG, BUAT BARU OTOMATIS (ANTI-KOSONG)
+      if (updated.length === 0) {
+        const newChat: Chat = {
+          id: Date.now().toString(),
+          title: "New Chat",
+          messages: [],
+        };
+        setActiveChatId(newChat.id);
+        return [newChat];
       }
+
+      // PINDAH KE CHAT LAIN JIKA YANG DIHAPUS ADALAH ACTIVE CHAT
+      if (id === activeChatId) {
+        // Cari index chat yang baru saja dihapus
+        const deletedIndex = prev.findIndex(c => c.id === id);
+        // Pilih tetangga terdekat (sebelumnya atau sesudahnya)
+        const nextChat = updated[deletedIndex] || updated[deletedIndex - 1] || updated[0];
+        setActiveChatId(nextChat.id);
+      }
+      
       return updated;
     });
   };
@@ -204,6 +215,19 @@ const ChatPages = () => {
               Recent Conversations
             </p>
           </div>
+          
+          {/* TOOLS LINK */}
+          <Link
+            to="/generator"
+            className="group flex items-center gap-3 p-3 rounded-xl hover:bg-indigo-500/10 border border-transparent hover:border-indigo-500/20 transition-all duration-200 mb-2"
+          >
+            <div className="w-6 h-6 rounded-lg bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors">
+              <Wand2 size={14} className="text-indigo-400" />
+            </div>
+            <span className="flex-1 text-sm text-zinc-400 group-hover:text-white font-medium">
+              Content Generator
+            </span>
+          </Link>
           {chats.map((chat) => (
             <div
               key={chat.id}
@@ -275,7 +299,7 @@ const ChatPages = () => {
             <div className="hidden md:flex items-center gap-2 text-zinc-400">
               <span className="text-zinc-600 ml-2">/</span>
               <span className="text-sm font-medium text-white truncate max-w-[200px]">
-                {activeChat.title}
+                {activeChat?.title || "No Active Chat"}
               </span>
             </div>
           </div>
@@ -290,56 +314,65 @@ const ChatPages = () => {
 
         {/* CHAT BOX */}
         <main className="flex-1 overflow-y-auto custom-scrollbar relative">
-          <div className="max-w-4xl mx-auto px-4 py-8 md:py-12">
-            {safeMessages.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-center mt-20 fade-in">
-                <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-indigo-500/20 to-purple-600/20 flex items-center justify-center mb-6 border border-indigo-500/20">
-                  <Sparkles size={32} className="text-indigo-400" />
+          <div className="max-w-4xl mx-auto px-4 h-full">
+            {isNewChat ? (
+              /* HERO LANDING PAGE */
+              <div className="h-full flex flex-col items-center justify-center text-center fade-in pb-20">
+                <div className="w-20 h-20 rounded-3xl bg-linear-to-br from-indigo-500/20 to-purple-600/20 flex items-center justify-center mb-8 border border-indigo-500/20 shadow-2xl shadow-indigo-500/10">
+                  <Sparkles size={40} className="text-indigo-400" />
                 </div>
-                <h2 className="text-2xl font-bold mb-2 heading-font">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 heading-font tracking-tight gradient-text">
                   How can I help you today?
                 </h2>
-                <p className="text-zinc-400 max-w-sm mb-8 text-sm">
+                <p className="text-zinc-500 max-w-sm mb-10 text-sm md:text-base leading-relaxed">
                   Experience the power of Lumina AI. Ask me anything from coding
                   to creative writing.
                 </p>
+                <div className="w-full max-w-2xl px-4">
+                  <ChatInput onSendMessage={handleSendMessage} />
+                </div>
+              </div>
+            ) : (
+              /* ACTIVE CHAT HISTORY */
+              <div className="py-8 md:py-12">
+                <div className="space-y-6">
+                  {safeMessages.map((msg, index) => (
+                    <MessageBubble
+                      key={index}
+                      message={msg.content}
+                      isUser={msg.role === "user"}
+                    />
+                  ))}
+
+                  {isTyping && (
+                    <div className="flex justify-start items-end gap-3 fade-in">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/10 flex-shrink-0">
+                        <Sparkles size={16} className="text-indigo-400" />
+                      </div>
+                      <div className="ai-bubble px-4 py-3 rounded-2xl flex gap-1.5 items-center">
+                        <span className="w-1.5 h-1.5 bg-indigo-400/60 rounded-full animate-bounce"></span>
+                        <span className="w-1.5 h-1.5 bg-indigo-400/60 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                        <span className="w-1.5 h-1.5 bg-indigo-400/60 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div ref={chatEndRef} className="h-4 mt-4"></div>
               </div>
             )}
-
-            <div className="space-y-6">
-              {safeMessages.map((msg, index) => (
-                <MessageBubble
-                  key={index}
-                  message={msg.content}
-                  isUser={msg.role === "user"}
-                />
-              ))}
-
-              {isTyping && (
-                <div className="flex justify-start items-end gap-3 fade-in">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/10 flex-shrink-0">
-                    <Sparkles size={16} className="text-indigo-400" />
-                  </div>
-                  <div className="ai-bubble px-4 py-3 rounded-2xl flex gap-1.5 items-center">
-                    <span className="w-1.5 h-1.5 bg-indigo-400/60 rounded-full animate-bounce"></span>
-                    <span className="w-1.5 h-1.5 bg-indigo-400/60 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                    <span className="w-1.5 h-1.5 bg-indigo-400/60 rounded-full animate-bounce [animation-delay:0.4s]"></span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div ref={chatEndRef} className="h-4"></div>
           </div>
         </main>
 
-        {/* INPUT */}
-        <footer className="p-4 md:p-6 bg-linear-to-t from-[#09090b] via-[#09090b] to-transparent">
-          <ChatInput onSendMessage={handleSendMessage} />
-          <p className="text-center text-[10px] text-zinc-500 mt-4">
-            Lumina AI can make mistakes. Check important info.
-          </p>
-        </footer>
+        {/* FOOTER INPUT (Only visible in active chat) */}
+        {!isNewChat && (
+          <footer className="p-4 md:p-6 bg-linear-to-t from-[#09090b] via-[#09090b] to-transparent sticky bottom-0">
+            <ChatInput onSendMessage={handleSendMessage} />
+            <p className="text-center text-[10px] text-zinc-500 mt-4">
+              Lumina AI can make mistakes. Check important info.
+            </p>
+          </footer>
+        )}
+
       </div>
     </div>
   );
