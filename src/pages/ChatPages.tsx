@@ -113,9 +113,7 @@ const ChatPages = () => {
 
       await sendMessageToAI(text, (chunk) => {
         fullAIResponse += chunk;
-        // 1. BYPASS REACT STATE UNTUK PENYIMPANAN
-        // Karena fungsi setChats akan dibatalkan/diabaikan jika user pindah halaman,
-        // kita paksa baca dari database lokal (localstorage) dan tulis manual secara real-time.
+        //paksa baca dari database lokal (localstorage) dan tulis manual secara real-time.
         try {
           const rawChats = localStorage.getItem("chats");
           if (rawChats) {
@@ -133,7 +131,7 @@ const ChatPages = () => {
             );
             localStorage.setItem("chats", JSON.stringify(updatedChats));
             
-            // 2. Tembakkan sinyal update agar layar Chat (walaupun baru dimuat ulang) langsung sinkron!
+            // sinyal update agar layar Chat langsung sinkron! walaupun dimuat ulang
             window.dispatchEvent(new Event("chatsUpdated"));
           }
         } catch (e) {
