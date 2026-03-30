@@ -62,6 +62,19 @@ const ChatPages = () => {
     localStorage.setItem("chats", JSON.stringify(chats));
   }, [chats]);
 
+  // 🔥 SINKRONISASI DATA LATAR BELAKANG
+  // Ini memastikan jika AI masih mengetik (di background) lalu user kembali ke halaman Chat, layarnya ikut terupdate!
+  useEffect(() => {
+    const handleStorageUpdate = () => {
+      const saved = localStorage.getItem("chats");
+      if (saved) {
+        setChats(JSON.parse(saved));
+      }
+    };
+    window.addEventListener("chatsUpdated", handleStorageUpdate);
+    return () => window.removeEventListener("chatsUpdated", handleStorageUpdate);
+  }, []);
+
   const updateChatMessages = (messages: Message[]) => {
     setChats((prev) =>
       prev.map((chat) =>
@@ -100,23 +113,32 @@ const ChatPages = () => {
 
       await sendMessageToAI(text, (chunk) => {
         fullAIResponse += chunk;
-        // bubble AI real-time
-        setChats((prev) => {
-          const updated = prev.map((chat) =>
-            chat.id === activeChatId
-              ? {
-                  ...chat,
-                  messages: [
-                    ...newMessages,
-                    { role: "ai" as const, content: fullAIResponse },
-                  ],
-                }
-              : chat,
-          );
-          // Simpan paksa ke localStorage agar memori chat tidak putus saat user pindah halaman (unmount)
-          localStorage.setItem("chats", JSON.stringify(updated));
-          return updated;
-        });
+        // 1. BYPASS REACT STATE UNTUK PENYIMPANAN
+        // Karena fungsi setChats akan dibatalkan/diabaikan jika user pindah halaman,
+        // kita paksa baca dari database lokal (localstorage) dan tulis manual secara real-time.
+        try {
+          const rawChats = localStorage.getItem("chats");
+          if (rawChats) {
+            const parsedChats: Chat[] = JSON.parse(rawChats);
+            const updatedChats = parsedChats.map((chat) =>
+              chat.id === activeChatId
+                ? {
+                    ...chat,
+                    messages: [
+                      ...newMessages,
+                      { role: "ai" as const, content: fullAIResponse },
+                    ],
+                  }
+                : chat
+            );
+            localStorage.setItem("chats", JSON.stringify(updatedChats));
+            
+            // 2. Tembakkan sinyal update agar layar Chat (walaupun baru dimuat ulang) langsung sinkron!
+            window.dispatchEvent(new Event("chatsUpdated"));
+          }
+        } catch (e) {
+          console.error("Gagal merekam memori chat latar belakang:", e);
+        }
       });
     } catch {
       toast.error("Koneksi gagal saat merespons. Silakan coba lagi nanti.");
