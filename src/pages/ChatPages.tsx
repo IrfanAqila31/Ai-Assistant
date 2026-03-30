@@ -10,9 +10,10 @@ import {
 } from "lucide-react";
 import ChatInput from "../components/ChatInput";
 import MessageBubble from "../components/MessageBubble";
-import { sendMessageToAI } from "../lib/openrouter";
+import { sendMessageToAI } from "../lib/gemini";
 import { Link } from "react-router";
 import { Wand2 } from "lucide-react";
+import { toast } from "sonner";
 
 type Message = {
   role: "ai" | "user";
@@ -100,28 +101,26 @@ const ChatPages = () => {
       await sendMessageToAI(text, (chunk) => {
         fullAIResponse += chunk;
         // bubble AI real-time
-        setChats((prev) =>
-          prev.map((chat) =>
+        setChats((prev) => {
+          const updated = prev.map((chat) =>
             chat.id === activeChatId
               ? {
                   ...chat,
                   messages: [
                     ...newMessages,
-                    { role: "ai", content: fullAIResponse },
+                    { role: "ai" as const, content: fullAIResponse },
                   ],
                 }
               : chat,
-          ),
-        );
+          );
+          // Simpan paksa ke localStorage agar memori chat tidak putus saat user pindah halaman (unmount)
+          localStorage.setItem("chats", JSON.stringify(updated));
+          return updated;
+        });
       });
     } catch {
-      updateChatMessages([
-        ...newMessages,
-        {
-          role: "ai",
-          content: "Maaf, terjadi kesalahan. Silakan coba lagi nanti. 😢",
-        },
-      ]);
+      toast.error("Koneksi gagal saat merespons. Silakan coba lagi nanti.");
+      updateChatMessages([...newMessages]); // Menghapus bubble kosong
     } finally {
       setIsTyping(false);
     }
@@ -137,6 +136,7 @@ const ChatPages = () => {
     setChats((prev) => [newChat, ...prev]);
     setActiveChatId(newChat.id);
     setIsSidebarOpen(false);
+    toast.success("Percakapan baru dibuat");
   };
 
   const handleDeleteChat = (e: React.MouseEvent, id: string) => {
@@ -144,6 +144,7 @@ const ChatPages = () => {
 
     setChats((prev) => {
       const updated = prev.filter((chat) => chat.id !== id);
+      toast.info("Riwayat percakapan dihapus");
 
       // JIKA KOSONG, BUAT BARU OTOMATIS
       if (updated.length === 0) {
@@ -276,8 +277,8 @@ const ChatPages = () => {
               User
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium truncate">Guest User</p>
-              <p className="text-[10px] text-zinc-500">Free Account</p>
+              <p className="text-sm font-medium truncate">Irfan Aqila Utama</p>
+              <p className="text-[10px] text-zinc-500">Developer</p>
             </div>
           </div>
         </div>
@@ -377,7 +378,7 @@ const ChatPages = () => {
           <footer className="p-4 md:p-6 bg-linear-to-t from-[#09090b] via-[#09090b] to-transparent sticky bottom-0">
             <ChatInput onSendMessage={handleSendMessage} />
             <p className="text-center text-[10px] text-zinc-500 mt-4">
-              Lumina AI can make mistakes. Check important info.
+              Lumina AI can make mistakes. Developed by Irfan Aqila Utama.
             </p>
           </footer>
         )}

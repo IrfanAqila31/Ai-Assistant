@@ -5,7 +5,6 @@ import {
   Sparkles, 
   Wand2, 
   Copy, 
-  Check, 
   Loader2, 
   FileText, 
   Share2, 
@@ -14,14 +13,14 @@ import {
   PenTool, 
   Rocket 
 } from "lucide-react";
-import { sendMessageToAI } from "../lib/openrouter";
+import { sendMessageToAI } from "../lib/gemini";
 import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
 
 const Generator = () => {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
 
   const suggestions = [
     { label: "Blog Post", prompt: "Tuliskan draf artikel blog menarik tentang [Topik Anda]", icon: FileText },
@@ -33,13 +32,12 @@ const Generator = () => {
   const handleCopy = () => {
     if (!output) return;
     navigator.clipboard.writeText(output);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
+    toast.success("Konten berhasil disalin ke clipboard!");
   };
 
   const handleGenerate = async () => {
     if (!input.trim()) {
-      setOutput("Silahkan masukkan Topik terlebih dahulu");
+      toast.warning("Silahkan masukkan topik atau prompt terlebih dahulu");
       return;
     }
 
@@ -56,7 +54,7 @@ const Generator = () => {
       });
     } catch (error) {
       console.error("Error generating content:", error);
-      setOutput("Terjadi kesalahan saat membuat konten.");
+      toast.error("Terjadi kesalahan koneksi saat membuat konten.");
     } finally {
       setIsLoading(false);
     }
@@ -123,27 +121,36 @@ const Generator = () => {
           </div>
 
           {/* INPUT AREA */}
-          <div className="w-full max-w-2xl glass p-3 md:p-4 rounded-3xl border border-white/10 shadow-2xl scale-in mb-6">
-            <div className="relative flex items-center">
-              <div className="absolute left-4 text-zinc-500">
+          <div className="w-full max-w-2xl glass p-5 md:p-6 rounded-3xl border border-white/10 shadow-2xl scale-in mb-6 flex flex-col gap-4">
+            <div className="relative w-full">
+              <div className="absolute left-4 top-[18px] text-zinc-500">
                 <Wand2 size={20} />
               </div>
-              <input
-                type="text"
+              <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Apa yang ingin Anda tulis hari ini?"
-                className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-32 outline-none text-white focus:border-indigo-500/30 focus:bg-white/[0.08] transition-all"
+                placeholder="Apa yang ingin Anda tulis hari ini? (Contoh: Buatkan artikel blog tentang masa depan internet...)"
+                rows={3}
+                className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-4 outline-none text-white focus:border-indigo-500/30 text-sm  focus:bg-white/[0.08] transition-all resize-none custom-scrollbar"
               />
+            </div>
+            
+            <div className="flex justify-end w-full">
               <button
                 onClick={handleGenerate}
-                disabled={isLoading}
-                className="absolute right-2 px-6 py-2.5 bg-linear-to-br from-indigo-500 to-purple-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all min-w-[120px] flex items-center justify-center"
+                disabled={isLoading || !input.trim()}
+                className="px-8 py-3 bg-linear-to-br from-indigo-500 to-purple-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:hover:-translate-y-0 transition-all min-w-[160px] flex items-center justify-center gap-2 group"
               >
                 {isLoading ? (
-                  <Loader2 size={18} className="animate-spin" />
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Generating...</span>
+                  </>
                 ) : (
-                  "Generate"
+                  <>
+                    <Sparkles size={16} className="group-hover:animate-pulse" />
+                    <span>Generate Content</span>
+                  </>
                 )}
               </button>
             </div>
@@ -176,19 +183,11 @@ const Generator = () => {
               <div className="w-full ai-bubble p-8 rounded-3xl relative group border border-white/5 shadow-2xl transition-all hover:border-white/10">
                 <button
                   onClick={handleCopy}
-                  className="absolute top-6 right-6 px-3 py-1.5 glass hover:bg-white/10 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-400 opacity-0 group-hover:opacity-100 border border-white/10"
+                  className="absolute top-6 right-6 px-3 py-1.5 glass hover:bg-white/10 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-400 opacity-0 group-hover:opacity-100 border border-white/10 cursor-pointer"
                   title="Copy to clipboard"
                 >
-                  {isCopied ? (
-                    <>
-                      <Check size={14} className="text-emerald-400" />
-                      <span className="text-emerald-400">Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={14} />
-                    </>
-                  )}
+                  <Copy size={14} />
+                  <span>Copy text</span>
                 </button>
                 {/* format respon ai */}
                 <div className="text-zinc-300 leading-relaxed pr-8 prose-custom">
@@ -254,8 +253,8 @@ const Generator = () => {
       </main>
 
       <footer className="p-6 text-center border-t border-white/5 bg-[#09090b]">
-        <p className="text-[10px] text-zinc-600 font-medium tracking-widest uppercase">
-          Powered by Lumina AI • Premium Content Engine
+        <p className="text-[10px] text-zinc-600 font-medium tracking-widest">
+          Powered by Lumina AI • Developed by Irfan Aqila Utama
         </p>
       </footer>
     </div>
