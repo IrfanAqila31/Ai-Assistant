@@ -72,7 +72,8 @@ const ChatPages = () => {
       }
     };
     window.addEventListener("chatsUpdated", handleStorageUpdate);
-    return () => window.removeEventListener("chatsUpdated", handleStorageUpdate);
+    return () =>
+      window.removeEventListener("chatsUpdated", handleStorageUpdate);
   }, []);
 
   const updateChatMessages = (messages: Message[]) => {
@@ -127,10 +128,10 @@ const ChatPages = () => {
                       { role: "ai" as const, content: fullAIResponse },
                     ],
                   }
-                : chat
+                : chat,
             );
             localStorage.setItem("chats", JSON.stringify(updatedChats));
-            
+
             // sinyal update agar layar Chat langsung sinkron! walaupun dimuat ulang
             window.dispatchEvent(new Event("chatsUpdated"));
           }
@@ -282,7 +283,7 @@ const ChatPages = () => {
 
               <button
                 onClick={(e) => handleDeleteChat(e, chat.id)}
-                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 hover:text-red-400 text-zinc-500 rounded-lg transition-all"
+                className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1.5 hover:bg-red-500/10 hover:text-red-400 text-zinc-500 rounded-lg transition-all"
               >
                 <Trash2 size={14} />
               </button>
@@ -332,13 +333,6 @@ const ChatPages = () => {
                 {activeChat?.title || "No Active Chat"}
               </span>
             </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs font-semibold hover:bg-indigo-500/20 transition-colors border border-indigo-500/20">
-              <Sparkles size={12} />
-              Upgrade Pro
-            </button>
           </div>
         </header>
 
